@@ -162,7 +162,7 @@ public class ChunkScreen extends BaseScreen {
 
 		addAll(chunkButtons);
 		new RequestMapDataPacket(chunkPos.x - FTBChunks.TILE_OFFSET, chunkPos.z - FTBChunks.TILE_OFFSET, chunkPos.x + FTBChunks.TILE_OFFSET, chunkPos.z + FTBChunks.TILE_OFFSET).sendToServer();
-		add(new SimpleButton(this, new TranslatableComponent("ftbchunks.gui.large_map"), Icons.MAP, (simpleButton, mouseButton) -> new LargeMapScreen().openGui()).setPosAndSize(1, 1, 16, 16));
+		add(new SimpleButton(this, new TranslatableComponent("ftbchunks.gui.large_map"), Icons.MAP, (simpleButton, mouseButton) -> FTBChunksClient.openGui()).setPosAndSize(1, 1, 16, 16));
 		// add(new SimpleButton(this, new TranslatableComponent("ftbchunks.gui.allies"), Icons.FRIENDS, (simpleButton, mouseButton) -> {}).setPosAndSize(1, 19, 16, 16));
 	}
 
@@ -180,7 +180,7 @@ public class ChunkScreen extends BaseScreen {
 	@Override
 	public boolean keyPressed(Key key) {
 		if (key.is(GLFW.GLFW_KEY_F)) {
-			new LargeMapScreen().openGui();
+			FTBChunksClient.openGui();
 			return true;
 		}
 

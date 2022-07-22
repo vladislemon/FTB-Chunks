@@ -219,10 +219,7 @@ public class LargeMapScreen extends BaseScreen {
 
 	@Override
 	public boolean keyPressed(Key key) {
-		if (FTBChunksClient.openMapKey.matches(key.keyCode, key.scanCode)) {
-			closeGui(true);
-			return true;
-		} else if (key.is(GLFW.GLFW_KEY_SPACE)) {
+		if (key.is(GLFW.GLFW_KEY_SPACE)) {
 			movedToPlayer = false;
 			return true;
 		} else if (super.keyPressed(key)) {
@@ -362,5 +359,11 @@ public class LargeMapScreen extends BaseScreen {
 			theme.drawString(matrixStack, memoryUsage, 0, 0, Theme.SHADOW);
 			matrixStack.popPose();
 		}
+	}
+
+	@Override
+	public void onClosed() {
+		super.onClosed();
+		FTBChunksClient.onGuiClosed();
 	}
 }

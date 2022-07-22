@@ -19,7 +19,6 @@ import dev.architectury.event.events.client.ClientGuiEvent;
 import dev.architectury.event.events.client.ClientPlayerEvent;
 import dev.architectury.event.events.client.ClientRawInputEvent;
 import dev.architectury.event.events.client.ClientReloadShadersEvent;
-import dev.architectury.event.events.client.ClientScreenInputEvent;
 import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.hooks.client.screen.ScreenAccess;
 import dev.architectury.injectables.annotations.ExpectPlatform;
@@ -60,7 +59,6 @@ import dev.ftb.mods.ftblibrary.math.XZ;
 import dev.ftb.mods.ftblibrary.snbt.SNBTCompoundTag;
 import dev.ftb.mods.ftblibrary.ui.CustomClickEvent;
 import dev.ftb.mods.ftblibrary.ui.GuiHelper;
-import dev.ftb.mods.ftblibrary.util.ClientUtils;
 import dev.ftb.mods.ftbteams.data.ClientTeam;
 import dev.ftb.mods.ftbteams.event.ClientTeamPropertiesChangedEvent;
 import dev.ftb.mods.ftbteams.event.TeamEvent;
@@ -154,6 +152,7 @@ public class FTBChunksClient extends FTBChunksCommon {
 	private double prevPlayerX, prevPlayerY, prevPlayerZ;
 	private static int renderedDebugCount = 0;
 
+	public static LargeMapScreen largeMapScreen;
 	public static boolean updateMinimap = false;
 	public static boolean alwaysRenderChunksOnMap = false;
 	public static SendGeneralDataPacket generalData;
@@ -182,7 +181,6 @@ public class FTBChunksClient extends FTBChunksCommon {
 		ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(this::loggedOut);
 		CustomClickEvent.EVENT.register(this::customClick);
 		ClientRawInputEvent.KEY_PRESSED.register(this::keyPressed);
-		ClientScreenInputEvent.KEY_PRESSED_PRE.register(this::keyPressed);
 		ClientGuiEvent.RENDER_HUD.register(this::renderHud);
 		ClientGuiEvent.INIT_PRE.register(this::screenOpened);
 		ClientTickEvent.CLIENT_PRE.register(this::clientTick);
@@ -212,8 +210,30 @@ public class FTBChunksClient extends FTBChunksCommon {
 		throw new AssertionError();
 	}
 
+	public static void switchGui() {
+		if (largeMapScreen == null ) {
+			openGui();
+		} else {
+			closeGui();
+		}
+	}
+
 	public static void openGui() {
-		new LargeMapScreen().openGui();
+		if (largeMapScreen == null) {
+			largeMapScreen = new LargeMapScreen();
+			largeMapScreen.openGui();
+		}
+	}
+
+	public static void closeGui() {
+		if (largeMapScreen != null) {
+			largeMapScreen.closeGui();
+			onGuiClosed();
+		}
+	}
+
+	public static void onGuiClosed() {
+		largeMapScreen = null;
 	}
 
 	public static void saveAllRegions() {
@@ -399,7 +419,7 @@ public class FTBChunksClient extends FTBChunksCommon {
 
 	public EventResult customClick(CustomClickEvent event) {
 		if (event.id().equals(BUTTON_ID)) {
-			openGui();
+			switchGui();
 			return EventResult.interruptTrue();
 		}
 
@@ -407,7 +427,11 @@ public class FTBChunksClient extends FTBChunksCommon {
 	}
 
 	public EventResult keyPressed(Minecraft client, int keyCode, int scanCode, int action, int modifiers) {
-		if (openMapKey.isDown()) {
+		if (action != GLFW.GLFW_PRESS) {
+			return EventResult.pass();
+		}
+
+		if (openMapKey.matches(keyCode, scanCode)) {
 			if (Screen.hasControlDown()) {
 				SNBTCompoundTag tag = new SNBTCompoundTag();
 				tag.putBoolean(FTBChunksClientConfig.MINIMAP_ENABLED.key, !FTBChunksClientConfig.MINIMAP_ENABLED.get());
@@ -422,26 +446,13 @@ public class FTBChunksClient extends FTBChunksCommon {
 
 				FTBChunks.LOGGER.info("===");
 			} else {
-				openGui();
+				switchGui();
 				return EventResult.interruptTrue();
 			}
-		} else if (zoomInKey.isDown()) {
+		} else if (zoomInKey.matches(keyCode, scanCode)) {
 			return changeZoom(true);
-		} else if (zoomOutKey.isDown()) {
+		} else if (zoomOutKey.matches(keyCode, scanCode)) {
 			return changeZoom(false);
-		}
-
-		return EventResult.pass();
-	}
-
-	public EventResult keyPressed(Minecraft client, Screen screen, int keyCode, int scanCode, int modifiers) {
-		if (openMapKey.isDown()) {
-			LargeMapScreen gui = ClientUtils.getCurrentGuiAs(LargeMapScreen.class);
-
-			if (gui != null) {
-				gui.closeGui(false);
-				return EventResult.interruptTrue();
-			}
 		}
 
 		return EventResult.pass();
